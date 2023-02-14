@@ -1,11 +1,42 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '@/styles/Home.module.css'
+import React, { useState, useRef } from 'react';
+import Head from 'next/head';
+import { Inter } from '@next/font/google';
+import TodoList from './TodoList';
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "../utils/firebase";
+import {v4 as uuidv4} from 'uuid';
 
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
+  const [todos, setTodos] = useState([]);
+  const [user] = useAuthState(auth);
+  const addRef = useRef();
+
+  function addTodo(event){
+    const listName = addRef.current.value
+    if (listName){
+      setTodos(oldTodos => {
+        return [...oldTodos, {id:uuidv4(), name: listName, isComplete:false}]
+      })
+      addRef.current.value = null 
+    } else{
+      return null
+    }
+  }
+
+  function checkBox(id) {
+    const newItem = [...todos]
+    const todo = newItem.find(specificItem => specificItem.id === id);
+    todo.isComplete = !todo.isComplete
+    setTodos(newItem)
+  }
+
+  function deleteTodos(){
+    const newTodos = todos.filter(todo => !todo.isComplete)
+    setTodos(newTodos)
+  }
+
   return (
     <>
       <Head>
@@ -14,110 +45,30 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.js</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
+    <div className="mx-6 md:max-w-2xl md:mx-auto">
+      
+      <div className= "flex justify-center text-white py-10">
+        <h1 className="text-5xl font-bold shadow-lg rounded-lg px-2 border">Todo List</h1>
+      </div>
+      
+      {user &&(
+        <div>
+          <div className='flex-row mb-2'>
+            <TodoList todos={todos} checkBox={checkBox}/>
           </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
+          <span className="flex justify-center mb-2">  
+            <input ref={addRef} type='text' className="rounded py-2 px-2" placeholder='Add todo...'></input>
+          </span>
+          <div className="flex justify-center gap-10">
+            <button onClick={addTodo} className='font-bold text-white border py-1 rounded-lg shadow-lg bg-slate-600 px-2 hover:bg-violet-600'>Add Item</button>
+            <button onClick={deleteTodos} className='font-bold text-white border py-1 rounded-lg shadow-lg bg-slate-600 px-2 hover:bg-violet-600'>Delete</button>
           </div>
+          <p className='flex justify-center font-bold text-white py-1 mt-2 rounded-lg'>Left todo: {todos.length}</p>
         </div>
+      )}
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+    </div>
+      
     </>
   )
 }
